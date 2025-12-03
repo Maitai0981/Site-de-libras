@@ -8,6 +8,10 @@
     let totalResources = 0;
     let loadedResources = 0;
     let allResourcesLoaded = false;
+    let totalVideos = 0;
+    let loadedVideos = 0;
+    let totalImages = 0;
+    let loadedImages = 0;
 
     // Atualizar barra de progresso
     function updateProgress(value) {
@@ -21,8 +25,14 @@
             const progress = (loadedResources / totalResources) * 100;
             updateProgress(progress);
 
-            // Atualizar texto informativo
-            loadingText.textContent = `Carregando recursos... ${loadedResources}/${totalResources}`;
+            // Atualizar texto informativo detalhado
+            if (loadedVideos < totalVideos) {
+                loadingText.textContent = `Carregando vídeos... ${loadedVideos}/${totalVideos}`;
+            } else if (loadedImages < totalImages) {
+                loadingText.textContent = `Carregando imagens... ${loadedImages}/${totalImages}`;
+            } else {
+                loadingText.textContent = `Carregando... ${loadedResources}/${totalResources}`;
+            }
 
             // Se todos os recursos foram carregados
             if (loadedResources >= totalResources && !allResourcesLoaded) {
@@ -46,25 +56,66 @@
     // Monitorar carregamento de um recurso
     function monitorResource(element, type) {
         totalResources++;
+        let counted = false;
 
         const onLoad = () => {
-            loadedResources++;
-            updateResourceProgress();
+            if (!counted) {
+                counted = true;
+                loadedResources++;
+
+                // Incrementar contadores específicos
+                if (type === 'vídeo') {
+                    loadedVideos++;
+                } else if (type === 'imagem') {
+                    loadedImages++;
+                }
+
+                console.log(`✓ ${type} carregado (${loadedResources}/${totalResources}): ${element.src || element.href}`);
+                updateResourceProgress();
+            }
         };
 
         const onError = () => {
-            console.warn(`Falha ao carregar ${type}:`, element.src || element.href);
-            loadedResources++; // Contar como carregado para não travar
-            updateResourceProgress();
+            if (!counted) {
+                counted = true;
+                loadedResources++;
+
+                // Incrementar contadores específicos mesmo em erro
+                if (type === 'vídeo') {
+                    loadedVideos++;
+                } else if (type === 'imagem') {
+                    loadedImages++;
+                }
+
+                console.warn(`✗ Falha ao carregar ${type}:`, element.src || element.href);
+                updateResourceProgress();
+            }
         };
 
-        if (element.complete || element.readyState === 4) {
-            // Já está carregado
+        // Para vídeos, verificar múltiplos estados de carregamento
+        if (type === 'vídeo') {
+            if (element.readyState >= 3) {
+                // HAVE_FUTURE_DATA ou HAVE_ENOUGH_DATA
+                counted = true;
+                loadedResources++;
+                loadedVideos++;
+                console.log(`✓ ${type} já carregado: ${element.src}`);
+            } else {
+                // Monitorar múltiplos eventos de vídeo
+                element.addEventListener('loadeddata', onLoad); // Primeiro quadro carregado
+                element.addEventListener('canplay', onLoad); // Pode começar a tocar
+                element.addEventListener('canplaythrough', onLoad); // Pode tocar até o fim
+                element.addEventListener('error', onError);
+            }
+        }
+        // Para imagens
+        else if (element.complete) {
+            counted = true;
             loadedResources++;
+            loadedImages++;
+            console.log(`✓ ${type} já carregada: ${element.src || element.href}`);
         } else {
-            // Aguardar carregamento
             element.addEventListener('load', onLoad);
-            element.addEventListener('loadeddata', onLoad); // Para vídeos
             element.addEventListener('error', onError);
         }
     }
@@ -77,16 +128,34 @@
     }
 
     function initializeLoading() {
-        // Monitorar todas as imagens
-        const images = document.querySelectorAll('img');
-        images.forEach(img => monitorResource(img, 'imagem'));
-
-        // Monitorar todos os vídeos
+        // PRIORIDADE 1: Monitorar e forçar carregamento de todos os vídeos primeiro
         const videos = document.querySelectorAll('video');
-        videos.forEach(video => monitorResource(video, 'vídeo'));
+        totalVideos = videos.length;
+        console.log(`📹 Encontrados ${totalVideos} vídeos para carregar`);
 
-        // Monitorar CSS (stylesheets)
+        videos.forEach(video => {
+            // Forçar preload dos vídeos
+            video.preload = 'auto';
+            video.load(); // Forçar início do carregamento
+            monitorResource(video, 'vídeo');
+        });
+
+        // PRIORIDADE 2: Monitorar todas as imagens
+        const images = document.querySelectorAll('img');
+        totalImages = images.length;
+        console.log(`🖼️ Encontradas ${totalImages} imagens para carregar`);
+
+        images.forEach(img => {
+            // Forçar carregamento de imagens mesmo que estejam ocultas
+            if (!img.src && img.dataset.src) {
+                img.src = img.dataset.src;
+            }
+            monitorResource(img, 'imagem');
+        });
+
+        // PRIORIDADE 3: Monitorar CSS (stylesheets)
         const stylesheets = document.querySelectorAll('link[rel="stylesheet"]');
+        console.log(`📄 Encontrados ${stylesheets.length} arquivos CSS para carregar`);
         stylesheets.forEach(link => monitorResource(link, 'CSS'));
 
         // Se não houver recursos, completar imediatamente
