@@ -1,18 +1,13 @@
-// Sistema de carregamento com feedback visual
+// Sistema de carregamento com monitoramento real de recursos
 (function() {
     const progressFill = document.getElementById('progress-fill');
     const loadingPercentage = document.getElementById('loading-percentage');
     const loadingScreen = document.getElementById('loading-screen');
-    let progress = 0;
+    const loadingText = document.querySelector('.loading-text');
 
-    // Simular progresso inicial
-    const progressInterval = setInterval(() => {
-        if (progress < 70) {
-            progress += Math.random() * 15;
-            if (progress > 70) progress = 70;
-            updateProgress(progress);
-        }
-    }, 200);
+    let totalResources = 0;
+    let loadedResources = 0;
+    let allResourcesLoaded = false;
 
     // Atualizar barra de progresso
     function updateProgress(value) {
@@ -20,37 +15,112 @@
         loadingPercentage.textContent = Math.round(value) + '%';
     }
 
-    // Quando tudo estiver carregado
-    window.addEventListener('load', function() {
-        clearInterval(progressInterval);
+    // Calcular e atualizar progresso baseado em recursos carregados
+    function updateResourceProgress() {
+        if (totalResources > 0) {
+            const progress = (loadedResources / totalResources) * 100;
+            updateProgress(progress);
 
-        // Completar o carregamento
-        progress = 100;
-        updateProgress(100);
+            // Atualizar texto informativo
+            loadingText.textContent = `Carregando recursos... ${loadedResources}/${totalResources}`;
 
-        // Aguardar um pouco e remover a tela
+            // Se todos os recursos foram carregados
+            if (loadedResources >= totalResources && !allResourcesLoaded) {
+                allResourcesLoaded = true;
+                loadingText.textContent = 'Carregamento concluído!';
+                removeLoadingScreen();
+            }
+        }
+    }
+
+    // Remover tela de carregamento
+    function removeLoadingScreen() {
         setTimeout(() => {
             loadingScreen.classList.add('hide');
             setTimeout(() => {
                 loadingScreen.style.display = 'none';
             }, 500);
         }, 500);
-    });
+    }
 
-    // Fallback: se demorar muito, forçar carregamento
-    setTimeout(() => {
-        if (progress < 100) {
-            clearInterval(progressInterval);
-            progress = 100;
-            updateProgress(100);
-            setTimeout(() => {
-                loadingScreen.classList.add('hide');
-                setTimeout(() => {
-                    loadingScreen.style.display = 'none';
-                }, 500);
-            }, 300);
+    // Monitorar carregamento de um recurso
+    function monitorResource(element, type) {
+        totalResources++;
+
+        const onLoad = () => {
+            loadedResources++;
+            updateResourceProgress();
+        };
+
+        const onError = () => {
+            console.warn(`Falha ao carregar ${type}:`, element.src || element.href);
+            loadedResources++; // Contar como carregado para não travar
+            updateResourceProgress();
+        };
+
+        if (element.complete || element.readyState === 4) {
+            // Já está carregado
+            loadedResources++;
+        } else {
+            // Aguardar carregamento
+            element.addEventListener('load', onLoad);
+            element.addEventListener('loadeddata', onLoad); // Para vídeos
+            element.addEventListener('error', onError);
         }
-    }, 10000); // 10 segundos máximo
+    }
+
+    // Esperar o DOM estar pronto
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeLoading);
+    } else {
+        initializeLoading();
+    }
+
+    function initializeLoading() {
+        // Monitorar todas as imagens
+        const images = document.querySelectorAll('img');
+        images.forEach(img => monitorResource(img, 'imagem'));
+
+        // Monitorar todos os vídeos
+        const videos = document.querySelectorAll('video');
+        videos.forEach(video => monitorResource(video, 'vídeo'));
+
+        // Monitorar CSS (stylesheets)
+        const stylesheets = document.querySelectorAll('link[rel="stylesheet"]');
+        stylesheets.forEach(link => monitorResource(link, 'CSS'));
+
+        // Se não houver recursos, completar imediatamente
+        if (totalResources === 0) {
+            totalResources = 1;
+            loadedResources = 1;
+        }
+
+        // Atualizar progresso inicial
+        updateResourceProgress();
+
+        // Fallback de segurança: forçar remoção após 15 segundos
+        setTimeout(() => {
+            if (!allResourcesLoaded) {
+                console.warn('Timeout de carregamento atingido. Forçando conclusão...');
+                loadedResources = totalResources;
+                allResourcesLoaded = true;
+                updateProgress(100);
+                loadingText.textContent = 'Carregamento concluído!';
+                removeLoadingScreen();
+            }
+        }, 15000);
+    }
+
+    // Backup: usar window.load também
+    window.addEventListener('load', function() {
+        if (!allResourcesLoaded) {
+            loadedResources = totalResources;
+            allResourcesLoaded = true;
+            updateProgress(100);
+            loadingText.textContent = 'Carregamento concluído!';
+            removeLoadingScreen();
+        }
+    });
 })();
 
 document.addEventListener('DOMContentLoaded', function () {
