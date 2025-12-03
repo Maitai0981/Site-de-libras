@@ -69,6 +69,18 @@ section {
     font-size: 2.2rem;
     margin-bottom: 25px;
     color: #1B263B;
+    padding: 20px;
+    position: relative;
+}
+
+.galeria h2::after {
+    content: '📹 Clique em qualquer sinal para ver o vídeo completo';
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: #666;
+    margin-top: 8px;
+    font-style: italic;
 }
 
 .cards {
@@ -84,14 +96,52 @@ section {
     overflow: hidden;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     width: 240px;
-    transition: transform 0.3s;
+    transition: transform 0.3s, box-shadow 0.3s;
     text-decoration: none;
     display: flex;
     flex-direction: column;
+    cursor: pointer;
+    position: relative;
 }
 
 .card:hover {
     transform: translateY(-5px);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+}
+
+.card-images {
+    position: relative;
+    width: 100%;
+    height: 160px;
+    overflow: hidden;
+    background-color: #f5f5f5;
+}
+
+.card-images-grid {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.card-images-grid img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.card-images-grid img.active {
+    opacity: 1;
+    z-index: 1;
+}
+
+.card-images-grid.single img {
+    position: relative;
+    opacity: 1;
 }
 
 .card img {
@@ -107,8 +157,18 @@ section {
     text-align: center;
     flex-grow: 1;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 4px;
+}
+
+.card p::after {
+    content: 'Clique para ver o vídeo';
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: #666;
+    opacity: 0.8;
 }
 
 .btn-voltar, .btn-feedback {
@@ -164,6 +224,22 @@ section {
 .tema-midia {
     flex: 1;
     min-width: 300px;
+    position: relative;
+}
+
+.tema-midia::before {
+    content: '🎬 VÍDEO DEMONSTRATIVO';
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(29, 38, 59, 0.9);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    z-index: 10;
+    letter-spacing: 0.5px;
 }
 
 .tema-midia img, .tema-midia video {
@@ -171,6 +247,8 @@ section {
     height: auto;
     border-radius: 8px;
     object-fit: cover;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: 3px solid #1B263B;
 }
 
 .passos-container {
@@ -181,6 +259,22 @@ section {
     margin-top: 20px;
     padding-top: 20px;
     border-top: 1px solid #eee;
+    position: relative;
+}
+
+.passos-container::before {
+    content: '📸 PASSOS DO SINAL';
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    padding: 4px 16px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #1B263B;
+    border-radius: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .passo-item {
