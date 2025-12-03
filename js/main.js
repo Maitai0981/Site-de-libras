@@ -1,3 +1,15 @@
+// Remover tela de carregamento quando tudo estiver carregado
+window.addEventListener('load', function() {
+    const loadingScreen = document.getElementById('loading-screen');
+    setTimeout(() => {
+        loadingScreen.classList.add('hide');
+        // Remove o elemento após a animação
+        setTimeout(() => {
+            loadingScreen.style.display = 'none';
+        }, 500);
+    }, 300); // Pequeno delay para garantir que tudo está carregado
+});
+
 document.addEventListener('DOMContentLoaded', function () {
     const allPages = document.querySelectorAll('.page-content');
 
@@ -18,19 +30,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const linkSecao = target.closest('.link-secao');
         const btnVoltar = target.closest('.btn-voltar-menu');
         const btnFeedback = target.closest('#btn-abrir-feedback');
-        const card = target.closest('.card');
 
         if (linkSecao) {
             const pageId = linkSecao.getAttribute('data-target');
             showPage(pageId);
-        } else if (card && card.closest('.galeria')) {
-            // Quando clicar em um card, abrir a página da categoria
-            const galeria = card.closest('.galeria');
-            const titulo = galeria.querySelector('.link-secao');
-            if (titulo) {
-                const pageId = titulo.getAttribute('data-target');
-                showPage(pageId);
-            }
         } else if (btnVoltar) {
             showPage('conteudo-principal');
         } else if (btnFeedback) {
