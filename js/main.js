@@ -1,14 +1,57 @@
-// Remover tela de carregamento quando tudo estiver carregado
-window.addEventListener('load', function() {
+// Sistema de carregamento com feedback visual
+(function() {
+    const progressFill = document.getElementById('progress-fill');
+    const loadingPercentage = document.getElementById('loading-percentage');
     const loadingScreen = document.getElementById('loading-screen');
-    setTimeout(() => {
-        loadingScreen.classList.add('hide');
-        // Remove o elemento após a animação
+    let progress = 0;
+
+    // Simular progresso inicial
+    const progressInterval = setInterval(() => {
+        if (progress < 70) {
+            progress += Math.random() * 15;
+            if (progress > 70) progress = 70;
+            updateProgress(progress);
+        }
+    }, 200);
+
+    // Atualizar barra de progresso
+    function updateProgress(value) {
+        progressFill.style.width = value + '%';
+        loadingPercentage.textContent = Math.round(value) + '%';
+    }
+
+    // Quando tudo estiver carregado
+    window.addEventListener('load', function() {
+        clearInterval(progressInterval);
+
+        // Completar o carregamento
+        progress = 100;
+        updateProgress(100);
+
+        // Aguardar um pouco e remover a tela
         setTimeout(() => {
-            loadingScreen.style.display = 'none';
+            loadingScreen.classList.add('hide');
+            setTimeout(() => {
+                loadingScreen.style.display = 'none';
+            }, 500);
         }, 500);
-    }, 300); // Pequeno delay para garantir que tudo está carregado
-});
+    });
+
+    // Fallback: se demorar muito, forçar carregamento
+    setTimeout(() => {
+        if (progress < 100) {
+            clearInterval(progressInterval);
+            progress = 100;
+            updateProgress(100);
+            setTimeout(() => {
+                loadingScreen.classList.add('hide');
+                setTimeout(() => {
+                    loadingScreen.style.display = 'none';
+                }, 500);
+            }, 300);
+        }
+    }, 10000); // 10 segundos máximo
+})();
 
 document.addEventListener('DOMContentLoaded', function () {
     const allPages = document.querySelectorAll('.page-content');
